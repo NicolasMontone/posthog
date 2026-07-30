@@ -127,9 +127,20 @@ export default defineConfig(({ mode }) => {
                 .filter(Boolean),
             // nosemgrep: trailofbits.javascript.apollo-graphql.v3-cors-audit.v3-potentially-bad-cors
             cors: true,
-            // JS_URL overrides for sandbox environments where Vite is exposed on a different port.
-            origin: process.env.JS_URL || 'http://localhost:8234',
-            hmr: process.env.JS_URL ? { clientPort: parseInt(process.env.JS_URL.split(':').pop()!) } : undefined,
+            // Standalone/preview mode: the browser is remote and reaches Vite through a proxied
+            // HTTPS origin, so a hardcoded `origin` (localhost:8234) would make the browser fetch
+            // scene chunks and the WASM worker from an address it can't reach — causing ChunkLoad
+            // failures and a reload loop. Leave `origin` unset so Vite emits relative URLs that
+            // resolve against the preview origin, and route HMR over the proxied wss port.
+            ...(process.env.VITE_MOCK_BACKEND
+                ? { hmr: { clientPort: 443, protocol: 'wss' as const } }
+                : {
+                      // JS_URL overrides for sandbox environments where Vite is exposed on a different port.
+                      origin: process.env.JS_URL || 'http://localhost:8234',
+                      hmr: process.env.JS_URL
+                          ? { clientPort: parseInt(process.env.JS_URL.split(':').pop()!) }
+                          : undefined,
+                  }),
             proxy: {
                 '/static': {
                     target: 'http://localhost:8000',
