@@ -10,6 +10,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 import { htmlGenerationPlugin } from './plugins/vite-html-plugin'
 import { posthogJsPlugin } from './plugins/vite-posthog-js-plugin'
 import { publicAssetsPlugin } from './plugins/vite-public-assets-plugin'
+import { yamlRawPlugin } from './plugins/vite-yaml-raw-plugin'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -19,6 +20,8 @@ export default defineConfig(({ mode }) => {
         plugins: [
             react(),
             tailwindcss(),
+            // Load product recipe `.yaml` files as raw strings when running standalone
+            yamlRawPlugin(),
             // We delete and copy the HTML files for development
             htmlGenerationPlugin(),
             // Copy public assets to src/assets for development
