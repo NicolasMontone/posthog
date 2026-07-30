@@ -8,6 +8,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 
 // import { toolbarDenylistPlugin } from './vite-toolbar-plugin'
 import { htmlGenerationPlugin } from './plugins/vite-html-plugin'
+import { mockBackendPlugin } from './plugins/vite-mock-backend-plugin'
 import { posthogJsPlugin } from './plugins/vite-posthog-js-plugin'
 import { publicAssetsPlugin } from './plugins/vite-public-assets-plugin'
 import { yamlRawPlugin } from './plugins/vite-yaml-raw-plugin'
@@ -22,6 +23,8 @@ export default defineConfig(({ mode }) => {
             tailwindcss(),
             // Load product recipe `.yaml` files as raw strings when running standalone
             yamlRawPlugin(),
+            // Standalone-only: mock just enough of the backend for the app to boot without Django
+            ...(process.env.VITE_MOCK_BACKEND ? [mockBackendPlugin()] : []),
             // We delete and copy the HTML files for development
             htmlGenerationPlugin(),
             // Copy public assets to src/assets for development
