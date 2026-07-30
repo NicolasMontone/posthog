@@ -18,6 +18,11 @@ export default defineConfig(({ mode }) => {
     const isDev = mode === 'development'
 
     return {
+        // Standalone-only: v0 re-syncs the project-local `.env.development.local` on every turn.
+        // Vite watches env files in `envDir` and restarts on change, which would restart the dev
+        // server in a loop and break the running app. Point `envDir` at a stable directory so those
+        // re-syncs don't trigger restarts. Untouched in normal PostHog dev (no VITE_MOCK_BACKEND).
+        envDir: process.env.VITE_MOCK_BACKEND ? resolve(__dirname, '.v0-env') : undefined,
         plugins: [
             react(),
             tailwindcss(),
