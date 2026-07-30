@@ -130,10 +130,11 @@ export default defineConfig(({ mode }) => {
             // Standalone/preview mode: the browser is remote and reaches Vite through a proxied
             // HTTPS origin, so a hardcoded `origin` (localhost:8234) would make the browser fetch
             // scene chunks and the WASM worker from an address it can't reach — causing ChunkLoad
-            // failures and a reload loop. Leave `origin` unset so Vite emits relative URLs that
-            // resolve against the preview origin, and route HMR over the proxied wss port.
+            // failures and a reload loop. Set neither `origin` nor `hmr`: Vite then emits relative
+            // module URLs (resolved against the preview origin) and the preview host handles HMR
+            // routing automatically. Normal PostHog dev keeps the JS_URL-based overrides.
             ...(process.env.VITE_MOCK_BACKEND
-                ? { hmr: { clientPort: 443, protocol: 'wss' as const } }
+                ? {}
                 : {
                       // JS_URL overrides for sandbox environments where Vite is exposed on a different port.
                       origin: process.env.JS_URL || 'http://localhost:8234',
@@ -147,6 +148,12 @@ export default defineConfig(({ mode }) => {
                     changeOrigin: true,
                 },
             },
+            // Standalone/preview mode: pre-transform the boot graph on startup so Vite discovers and
+            // pre-bundles dependencies before the browser's first request, reducing the mid-load
+            // dependency re-optimization that would otherwise require an HMR-driven full reload.
+            ...(process.env.VITE_MOCK_BACKEND
+                ? { warmup: { clientFiles: ['./src/index.tsx', './src/scenes/App.tsx', './src/scenes/bootApp.ts'] } }
+                : {}),
         },
         define: {
             global: 'globalThis',
